@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+
+<p>使用线程池<strong>线程池</strong>的目的：</p>
+
+<ul><li>降低资源消耗：创建线程和销毁线程会占用系统资源</li><li>提高响应速度：创建线程和销毁线程需要占用时间</li><li>方便集中管理：为了防止滥用多线程，有个统一治理的地方</li></ul>
+
+<p>在《阿里巴巴 java 开发手册》中指出线程资源必须通过线程池提供，不允许在应用在显示的创建线程；而且线程池不允许使用 Executors 创建，要通过 ThreadPoolExecutor 方式，由于 jdk 中 Executor 框架虽然提供了如 newFixedThreadPool()、newSingleThreadExecutor()、newCachedThreadPool（）等创建线程池的方法，但是还是不够灵活。</p>
+
+<h2>1 线程数设置规则</h2>
+
+<p>但是根据业务的不同，任务可以分为 IO 密集型和计算密集型，针对不同的类型我们设置的线程数会有不同的规则：
+    - 针对 IO 密集型：线程池的线程数量要相对较多，约等于 CPU 核心数*2。
+    - 针对计算密集型：线程池的数量尽量要少，约等于 CPU 的核心数。</p>
+
+<h2>2 线程池原理</h2>
+
+<p>java 线程池的实现原理其实很简单，就是一个线程集合 workerSet 和阻塞队列 workQueue。当向线程池提交一个任务的时候，线程池会将任务先放到 workQueue 中，workerSet 中的线程会不断的从 workQueue 中获取线程然后执行。当 workQueue 中没有任务的时候，worker 就会阻塞，直到队列中有任务了就取出来继续执行
+    <img alt="" src="https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/16fc655e668440e690e3f30102b0b39c~tplv-k3u1fbpfcp-zoom-1.image"/></p>
+
+<h2>3 线程池流程</h2>
+
+<p>当一个任务提交到线程池后,大概的执行流程如下：</p>
+
+<ul><li>线程池首先会判断当前运行的线程的数量是否是小于 corePoolSize。如果是，则创建一个新的工作线程来执行任务。如果都在执行任务，则进入到第二步。</li><li>判断 BlockingQueue 是否已经满了，如果没有满，就将线程放入 BlockingQueue。否则进入到第三步</li><li>创建新的线程直到线程数达到 maximumPoolSize,如果创建一个新的工作线程将使当前运行的线程数量超过 maximumPoolSize，则交给 RejectedExecutionHandler 来处理任务</li></ul>
+
+<h2>4 线程池参数</h2>
+
+<ul><li>corePoolSize:核心线程数，当提交一个任务给线程池时，如果当前线程池的线程数小于 corePoolSize 的话会一直创建新线程执行任务，知道线程数等于 corePoolSize。如果当前线程数为 corePoolSize，继续提交的任务被保存到阻塞队列中，等待被执行；如果执行了线程池的 prestartAllCoreThreads()方法，线程池会提前创建并启动所有核心线程。</li><li><p>workQueue:用来保存等待被执行的任务的阻塞队列，在 JDK 中提供了如下阻塞队列</p><ul><li>ArrayBlockingQueue:基于数组结构的有界阻塞队列，按 FIFO 排序任务</li><li>LinkedBlockingQueue:基于链表结构的阻塞，按 FIFO 排序任务，吞吐量通常要高，在未指明容量的时候，容量默认为 Integer.MAX_VALUE。</li><li>SynchronousQueue:一个不存元素的阻塞队列，每个插入操作必须等另一个线程调用移除操作，否则插入操作一直处于阻塞状态，吞吐量通常要高于 LinkedBlockingQueue</li><li>PriorityBlockingQueue:具有优先级的无界阻塞队列</li><li><p>DelayQueue：类似于 PriorityBlockingQueue，是二叉堆实现的无界优先级阻塞队列，要求元素都实现 Delayed 接口，通过执行时延从队列中提取任务，时间没到取不出来。</p></li></ul></li><li><p>maximumPoolSize:线程池中允许的最大线程数，如果当前阻塞队列满了，向线程池继续提交任务，如果线程池当前的线程数小于 maximumPoolSize 的值，就会继续创建线程执行任务。当阻塞队列是无界队列的话，则 maximumPoolSize 不起作用，因为无法提交至核心线程池的线程会一直持续放入 workQueue。</p></li><li>keepAliveTime：非核心线程空闲时的存活时间，即当线程没有任务执行时，该线程继续存活的时间。</li><li>unit: keepAliveTime 的单位</li><li>threadFactory:创建线程的工厂，通过自定义的线程工厂可以给每个新建的线程设置一个具有识别度的线程名。默认为 DefaultThreadFactory。</li><li>handler：线程池和饱和策略，当阻塞队列满了，线程池中的线程数大于 maximumPoolSize 并且没有空闲的，如果继续提交任务的话，必须采取一种策略处理这些线程无法处理的任务，线程池提供了四种策略：<ul><li>AbortPolicy:直接抛出异常，默认策略；</li><li>CallerRunsPolicy:用调用者所在的线程来执行任务；</li><li>DiscardOldentPolicy:丢弃阻塞队列中最靠前的任务，并执行当前任务；</li><li>DiscardPolicy:直接丢弃任务。
+    我们也可以根据实际的应用场景实现 RejectedExecutionHandler 接口，自定义饱和策略，如记录日志或持久化存储不能处理的任务。</li></ul></li></ul>
+
+<h2>5 Executor 源码解析</h2>
+
+<h3>FixedThreadPool(定长线程池)</h3>
+
+<p><img alt="" src="https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/1acbb3996e024088a84d096ceac91f82~tplv-k3u1fbpfcp-zoom-1.image"/></p>
+
+<p><strong>特点：</strong></p>
+
+<ul><li>使用了 LinkedBlockingQueue，并且没有指定长度</li></ul>
+
+<p><strong>不足：</strong></p>
+
+<ul><li>因为默认值为 Integer.MAX_VALUE，可能会耗费很大的内存，甚至 OOM</li></ul>
+
+<h3>ScheduledThreadPool(定时线程池)</h3>
+
+<p><img alt="" src="https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/7a8c244832a342db9ee24d95438cd887~tplv-k3u1fbpfcp-zoom-1.image"/></p>
+
+<p><strong>特点：</strong></p>
+
+<ul><li>使用了 LinkedBlockingQueue，并且没有指定长度</li></ul>
+
+<p><strong>不足：</strong></p>
+
+<ul><li>因为默认值为 Integer.MAX_VALUE，可能会耗费很大的内存，甚至 OOM</li></ul>
+
+<h3>CacheThreadPool(可缓存线程池)</h3>
+
+<p><img alt="" src="https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/d8e67816e4a345368f4465cdbe27d145~tplv-k3u1fbpfcp-zoom-1.image"/></p>
+
+<p><strong>特点：</strong></p>
+
+<ul><li>maximumPoolSize 的最大值为 Integer.MAX_VALUE，因为其核心线程池数为 0，所以当线程空闲时达到 60s 后都会被回收，极端情况会出现不会持有任何线程资源的情况。</li></ul>
+
+<p><strong>不足：</strong></p>
+
+<ul><li>可能导致创建的线程非常多，甚至 OOM</li></ul>
+
+<h3>SingleThreadExecutor(单线程线程池)</h3>
+
+<p><img alt="" src="https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/dffa9e7ee9cd49bfb0ebec8ce920f308~tplv-k3u1fbpfcp-zoom-1.image"/></p>
+
+<p><strong>特点：</strong></p>
+
+<ul><li>只有一个核心线程，如果 i 该线程异常结束，则会创建一个新的线程任务来继续执行任务，唯一的线程可以保证所提交的任务的顺序执行，使用了 LinkedBlockingQueue 无界队列</li></ul>
+
+<p><strong>不足：</strong></p>
+
+<ul><li>由于使用了无界队列, 所以 SingleThreadPool 永远不会拒绝, 即饱和策略失效</li></ul>
+
+<h2>6 自定义线程池</h2>
+
+<p>我们看完源码后发现虽然提供了四种线程池的实现，但是都是有一定的弊端，很多东西不能自由的定义，所以阿里不推荐用 Executor 是有原因的，我们下面来看一下自定义的线程池
+    <img alt="" src="https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/2d55abafd5ca41318b60f24426b24bb1~tplv-k3u1fbpfcp-zoom-1.image"/></p>
+
+<p><strong>说明：</strong></p>
+
+<ul><li>核心线程数：5</li><li>最大线程数：9</li><li>非核心线程空闲存活时间：20s</li><li>任务队列：长度为 1 的 ArrayBlockingQueue
+    <img alt="" src="https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/22ff676cc7f844dfa4e5bc8e60dd2fbf~tplv-k3u1fbpfcp-zoom-1.image"/></li></ul>
+
+<p><strong>说明：</strong>
+    连续执行 10 次任务，每个任务执行时间为 10s</p>
+
+<p><strong>效果：</strong>
+    首先会使用 5 个核心线程，然后把第六个任务放到任务队列，因为队列的长度为 1，所以后面的任务到达时会判断是否达到了最大线程数，所以第 7~10 个任务会使线程池创建最大线程数到 9，然后过了 10s 后有空闲线程后再执行第六个任务，执行效果如下图。</p>
+
+<p><img alt="" src="https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/1283443b8c1348fca59c0970d034c98e~tplv-k3u1fbpfcp-zoom-1.image"/></p>
+
+<p><strong>感谢各位大佬的❤️关注+点赞❤️，原创不易，鼓励笔者创作更好的文章</strong></p>
+</html>

@@ -52,4 +52,9 @@ public class ProductController {
     public String index(Model model) {
         return "index";
     }
+
+    @RequestMapping("/executor")
+    public String executor(Model model) {
+        return "executor";
+    }
 }
