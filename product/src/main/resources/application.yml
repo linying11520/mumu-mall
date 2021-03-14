@@ -4,7 +4,7 @@ spring:
   application:
     name: mumu-product
   redis:
-    host: mumu-redis
+    host: 47.115.51.108
     port: 6379
     lettuce:
       pool:

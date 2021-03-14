@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html xmlns:th="http://www.thymeleaf.org">
 
 <head>
     <!-- Meta, title, CSS, favicons, etc. -->
@@ -33,7 +33,7 @@
                                 <div class="info-back">
                                     <h2>
 
-                                            林颖
+                                            木木
                                             最帅
                                     </h2>
                                 </div>
@@ -45,9 +45,9 @@
                         <img src="./img/logo2.jpg" width="80" alt="Dmego`s logo" class="js-avatar iUp show" />
                     </a> -->
                     <h1 class="panel-cover__title panel-title iUp">
-                        <a href="#" title="Dmego Home">Dmego</a>
+                        <a href="#" title="Dmego Home">木木</a>
                     </h1>
-                    <p class="panel-cover__subtitle panel-subtitle iUp">Code Create Life</p>
+                    <p class="panel-cover__subtitle panel-subtitle iUp">奇迹在此发生!</p>
                     <hr class="panel-cover__divider iUp" />
                     <p id="description" class="panel-cover__description iUp">如何得与凉风约，不共尘沙一并来!
                         <br/>
@@ -58,16 +58,46 @@
                             <nav class="cover-navigation cover-navigation--primary">
                                 <ul class="navigation">
                                     <li class="navigation__item">
-                                        <a href="https://juejin.cn/user/3034307825249677" class="blog-button">首页</a>
+                                        <a href="https://juejin.cn/post/6936786316155846693" class="blog-button" target="_blank">synchronized</a>
                                     </li>
                                     <li class="navigation__item">
-                                        <a href="/executor" class="blog-button" target="_blank">博客</a>
+                                        <a href="https://juejin.cn/post/6936405138022072334" class="blog-button" target="_blank">线程安全<br/></a>
                                     </li>
                                     <li class="navigation__item">
-                                        <a href="https://juejin.cn/user/3034307825249677" class="blog-button" target="_blank">简历</a>
+                                        <a href="https://juejin.cn/post/6930106511725166599" class="blog-button" target="_blank">volatile</a>
                                     </li>
                                     <li class="navigation__item">
-                                        <a href="https://juejin.cn/user/3034307825249677" class="blog-button" target="_blank">关于</a>
+                                        <a href="hhttps://juejin.cn/post/6923872053959327758" class="blog-button" target="_blank">线程池</a>
+                                    </li>
+                                    <li class="navigation__item">
+                                        <a href="https://juejin.cn/post/6923005037589299214" class="blog-button" target="_blank">Dockerfile命令<br/></a>
+                                    </li>
+                                    <li class="navigation__item">
+                                        <a href="hhttps://juejin.cn/post/6921906580577320973" class="blog-button" target="_blank">Docker命令</a>
+                                    </li>
+                                    <li class="navigation__item">
+                                        <a href="https://juejin.cn/post/6921299013769625607" class="blog-button" target="_blank">分布式限流</a>
+                                    </li>
+                                    <li class="navigation__item">
+                                        <a href="https://juejin.cn/post/6918593944431362061" class="blog-button" target="_blank">搭建ELK</a>
+                                    </li>
+                                    <li class="navigation__item">
+                                        <a href="https://juejin.cn/post/6916065432185077773" class="blog-button" target="_blank">延迟队列<br/></a>
+                                    </li>
+                                    <li class="navigation__item">
+                                        <a href="https://juejin.cn/post/6915648411643412488" class="blog-button" target="_blank">JVM调优</a>
+                                    </li>
+                                    <li class="navigation__item">
+                                        <a href="https://juejin.cn/post/6913478704815407112" class="blog-button" target="_blank">垃圾回收算法</a>
+                                    </li>
+                                    <li class="navigation__item">
+                                        <a href="https://juejin.cn/post/6912462666187407367" class="blog-button" target="_blank">分布式事务<br/></a>
+                                    </li>
+                                    <li class="navigation__item">
+                                        <a href="https://juejin.cn/post/6910880043980259342" class="blog-button" target="_blank">B-Tree和B+Tree</a>
+                                    </li>
+                                    <li class="navigation__item">
+                                        <a href="https://juejin.cn/post/6910202106561626119" class="blog-button" target="_blank">MySQL优化</a>
                                     </li>
                                 </ul>
                             </nav>
@@ -76,7 +106,7 @@
                             <nav class="cover-navigation navigation--social">
                                 <ul class="navigation">
                                     <li class="navigation__item">
-                                        <a href="https://github.com/dmego/" title="github" target="_blank">
+                                        <a href="https://github.com/linying11520/mumu-mall" title="github" target="_blank">
                                             <i class='social iconfont icon-github'></i>
                                             <span class="label">github</span>
                                         </a>
@@ -99,11 +129,10 @@
             <a class="icp" href="http://www.miitbeian.gov.cn/publish/query/indexFirst.action" target="_blank">XXX</a>
             <a class="gwab" href="http://www.beian.gov.cn/portal/recordQuery" target="_blank">XXX</a>
         </div> -->
+
         <div class="remark iUp">
-            <p class="power">Powered By 
-                <a href="https://bird.ioliu.cn/" target="_blank"> JsonBird </a> And 
-                <a href="https://hitokoto.cn/" target="_blank"> Hitokoto </a>
-            </p>
+            <a th:text="'今日访问量'+ ${todayCount}+ ' ' +
+             '总访问量'+ ${count}" class="power"></a>
         </div>
     </header>
     <script type="text/javascript" src="../static/js/jquery.min.js"></script>

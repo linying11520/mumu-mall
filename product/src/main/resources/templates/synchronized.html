@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<h2>synchronized介绍</h2>
+
+<p>java的线程是映射到操作系统的原生线程之上的，如果要阻塞或唤醒一个线程，都需要操作系统来帮忙完成，这就需要从用户态转换到核心态中，因此状态转换需要耗费很多的处理器时间，对于简单的同步块，状态转换的时间可能比用户代码执行的时间还要长，所以synchronized是java语言中一个重量级操作。</p>
+
+<p>synchronized关键字经过编译后，会在同步块的前后分别形成monitorenter和monitorenxit两个字节码指令，这两个字节码都需要一个reference类型的参数来指明要锁定的解锁的对象。</p>
+
+<p>根据虚拟机规范的要求，在执行monitorenter指令的时候，首先要尝试获取对象的锁，如果这个对象没被锁定，或者当前线程已经拥有了那个对象的锁，把锁的计数器加1，相应的，在执行monitorexit指令时会将锁计数器减1，当计数器为0时，锁就被释放了。如果获取对象锁失败，那么当前线程就要阻塞等待，直到对象锁被占有线程释放为止</p>
+
+<p>synchronized同步块对同一个线程来说是可重入的，不会出现自己把自己锁死的情况。</p>
+
+<p>通过以前volatile的介绍我们知道，volatile关键字是只能保证有序性和可见性，但是不能保证原子性，synchronized是能保证原子性、有序性和可见性的。</p>
+
+<h2>为什么要使用synchronized</h2>
+
+<p><strong>我们来看一个售票的案例</strong>
+    <code></code>`java
+    @RunWith(SpringRunner.class)
+    @SpringBootTest
+    public class SynchronizedTest {
+    @Autowired
+    private ExecutorService newFixThreadPool;</p>
+
+<pre><code>//一百张票
+private int ticket = 100;
+
+public void increase() {
+    //模拟售票
+    if (ticket == 0) {
+        System.out.println(&quot;票已售罄&quot;);
+    } else {
+        try {
+            Thread.sleep(1);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        ticket--;
+        System.out.println(&quot;当前剩余票数&quot; + ticket);
+    }
+}
+
+//使用线程池执行售票业务
+@Test
+public void addTest() {
+    for (int i = 1; i &lt;= 200; i++) {
+        Runnable task = new Runnable() {
+            @Override
+            public void run() {
+                increase();
+            }
+        };
+        newFixThreadPool.execute(task);
+    }
+}</code></pre>
+
+<p>}
+    <code></code>`</p>
+
+<p><img alt="" src="https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/8b047fbfe0f640f4adb53979595e1a1e~tplv-k3u1fbpfcp-zoom-1.image"/></p>
+
+<p><strong>以上代码会遭成一个问题，那就是超卖的问题，我们来分析一下原因：</strong></p>
+
+<p><img alt="" src="https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/8aa69100d430434999fcb6e38d8c37ce~tplv-k3u1fbpfcp-zoom-1.image"/></p>
+
+<p>在并发条件下，例如只剩下一张票的时候，这个时候多个线程判断是否还有票，这个时候判断的都是大于0，所以就都进入到售票的业务逻辑，所以就会出现超卖的现象。因此我们就可以引入重量级锁synchronized来控制同时只能有一个线程进入到售票的逻辑，这样就不会出现超卖的现象了。</p>
+
+<h2>synchronized的三种应用方式</h2>
+
+<h3>普通同步方法</h3>
+
+<p>普通同步方法（实例方法），锁是当前实例对象，进入同步代码前要获得当前实例的锁
+    <code></code>`java
+    @RunWith(SpringRunner.class)
+    @SpringBootTest
+    public class SynchronizedTest {
+    @Autowired
+    private ExecutorService newFixThreadPool;</p>
+
+<pre><code>//一百张票
+private int ticket = 100;
+
+// 作用于同步方法
+public synchronized void increase() {
+    //模拟售票
+    if (ticket == 0) {
+        System.out.println(&quot;票已售罄&quot;);
+    } else {
+        try {
+            Thread.sleep(1);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        ticket--;
+        System.out.println(&quot;当前剩余票数&quot; + ticket);
+    }
+}
+
+//使用线程池执行售票业务
+@Test
+public void addTest() {
+    for (int i = 1; i &lt;= 200; i++) {
+        Runnable task = new Runnable() {
+            @Override
+            public void run() {
+                increase();
+            }
+        };
+        newFixThreadPool.execute(task);
+    }
+}</code></pre>
+
+<p>}</p>
+
+<p><code></code>`
+    运行结果：</p>
+
+<p><img alt="" src="https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/dc6ee7c007b34cefb8a8f445157ef2e0~tplv-k3u1fbpfcp-zoom-1.image"/></p>
+
+<p>可以看到，已经解决超卖的这个问题。</p>
+
+<h3>静态同步方法</h3>
+
+<p>静态同步方法，锁是当前类的class独享，进入同步代码前要获得当前类对象的锁。
+    <code>java
+        // 作用于静态方法
+        public static synchronized void increase() {
+        //模拟售票
+        if (ticket == 0) {
+        System.out.println(&quot;票已售罄&quot;);
+        } else {
+        try {
+        Thread.sleep(1);
+        } catch (InterruptedException e) {
+        e.printStackTrace();
+        }
+        ticket--;
+        System.out.println(&quot;当前剩余票数&quot; + ticket);
+        }
+        }
+    </code></p>
+
+<h3>同步代码块</h3>
+
+<p>同步代码块，锁是括号里面的对象，对给定对象加锁，进入同步代码块前需要获取给定对象得锁。
+    <code>java
+        // 作用于同步代码块
+        public void increase() {
+        synchronized (this) {
+        //模拟售票
+        if (ticket == 0) {
+        System.out.println(&quot;票已售罄&quot;);
+        } else {
+        try {
+        Thread.sleep(1);
+        } catch (InterruptedException e) {
+        e.printStackTrace();
+        }
+        ticket--;
+        System.out.println(&quot;当前剩余票数&quot; + ticket);
+        }
+        }
+        }
+    </code></p>
+
+<p><strong>其实我们使用平常使用的锁，JVM会自动对其进行一些优化，其中包含偏向锁、轻量级锁、自旋锁和自适应自旋锁、锁消除、锁粗化，想要了解的可以看下我之前发的线程安全的文章</strong>&gt;&gt; <a href="https://juejin.cn/post/6936405138022072334">线程安全及锁优化</a></p>
+
+<p><strong>前面有介绍到volatile关键字如果不是很了解的同学可以看下：</strong>&gt;&gt;<a href="https://juejin.cn/post/6930106511725166599">Volatile关键字</a></p>
+
+<p><strong>文章中有用到线程池，有需要了解的可以看下:</strong>&gt;&gt;<a href="https://juejin.cn/post/6923872053959327758">彻底搞懂线程池</a></p>
+
+<p>感谢各位大佬的❤️关注+点赞❤️，原创不易，鼓励笔者创作更好的文章</p>
+</body>
+</html>

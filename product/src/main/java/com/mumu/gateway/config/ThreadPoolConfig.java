@@ -14,11 +14,11 @@ public class ThreadPoolConfig {
 
     @Bean("fixThreadPool")
     public ExecutorService newFixThreadPool() {
-        return new ThreadPoolExecutor(5,
-                9,
+        return new ThreadPoolExecutor(200,
+                200,
                 20L,
                 TimeUnit.SECONDS,
-                new ArrayBlockingQueue<>(1),
+                new ArrayBlockingQueue<>(1000),
                 new ThreadPoolExecutor.AbortPolicy());
     }
 }
