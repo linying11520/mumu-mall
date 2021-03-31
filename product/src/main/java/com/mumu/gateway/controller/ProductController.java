@@ -2,6 +2,7 @@ package com.mumu.gateway.controller;
 
 import com.mumu.gateway.common.RateLimiter;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Scope;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.support.atomic.RedisAtomicLong;
 import org.springframework.stereotype.Controller;
@@ -15,8 +16,10 @@ import java.util.Date;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
 
-@Controller
+@RestController
+@Scope(value = "prototype")
 public class ProductController {
     @Autowired
     private ExecutorService newFixThreadPool;
@@ -24,6 +27,49 @@ public class ProductController {
     private RateLimiter rateLimiter;
     @Autowired
     private RedisTemplate redisTemplate;
+
+    ReentrantLock lock = new ReentrantLock();
+
+
+    @GetMapping("/testLock")
+    public synchronized void testLcok() {
+        System.out.println(this);
+            System.out.println("进入testLock");
+            try {
+                Thread.sleep(10000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+    }
+
+    @GetMapping("/testLockClass")
+    public void testLockClass() {
+        synchronized (ProductController.class) {
+            System.out.println(this);
+            System.out.println(ProductController.class);
+            System.out.println("进入testLockClass");
+            try {
+                Thread.sleep(10000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    @GetMapping("/lock")
+    public void lock() {
+        System.out.println(this);
+        try {
+            lock.lock();
+            System.out.println("进入lock");
+            Thread.sleep(10000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } finally {
+            lock.unlock();
+        }
+    }
+
 
     @GetMapping("/addGoods")
     public void addGoods() {
