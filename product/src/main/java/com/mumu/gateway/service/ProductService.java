@@ -1,4 +1,5 @@
 package com.mumu.gateway.service;
 
-public class ProductService {
+public abstract class ProductService {
+   public abstract Integer addGoods(String goodsName);
 }
