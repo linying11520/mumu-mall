@@ -5,6 +5,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.support.atomic.RedisAtomicLong;
+import org.springframework.integration.redis.util.RedisLockRegistry;
+import org.springframework.integration.support.locks.LockRegistry;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,30 +18,50 @@ import java.util.Date;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 @RestController
-@Scope(value = "prototype")
 public class ProductController {
     @Autowired
     private ExecutorService newFixThreadPool;
+
     @Autowired
     private RateLimiter rateLimiter;
+
     @Autowired
     private RedisTemplate redisTemplate;
+
+    @Autowired
+    private RedisLockRegistry redisLockRegistry;
 
     ReentrantLock lock = new ReentrantLock();
 
 
+    @GetMapping("/testLockRegistry")
+    public void testLockRegistry() {
+        String key = "123456";
+        Lock lock = redisLockRegistry.obtain(key);
+        try {
+           lock.lock();
+            System.out.println("测试分布式锁");
+            Thread.sleep(10000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } finally {
+            lock.unlock();
+        }
+    }
+
     @GetMapping("/testLock")
     public synchronized void testLcok() {
         System.out.println(this);
-            System.out.println("进入testLock");
-            try {
-                Thread.sleep(10000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+        System.out.println("进入testLock");
+        try {
+            Thread.sleep(10000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     @GetMapping("/testLockClass")
