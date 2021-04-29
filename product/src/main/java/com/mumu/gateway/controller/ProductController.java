@@ -1,6 +1,7 @@
 package com.mumu.gateway.controller;
 
 import com.mumu.gateway.common.RateLimiter;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -21,6 +22,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+@Slf4j
 @RestController
 public class ProductController {
     @Autowired
@@ -125,6 +127,7 @@ public class ProductController {
 
     @RequestMapping("/index")
     public String index(Model model) {
+        log.info("开始调用index");
         String key = "readCount";
         String today = "todayCount";
         String form = String.format("%tF", new Date());
@@ -133,13 +136,17 @@ public class ProductController {
         Integer todayCount = 0;
         if (redisTemplate.hasKey(key)) {
             count = (Integer) redisTemplate.opsForValue().get(key);
+            log.info("总数="+count);
         } else {
             redisTemplate.opsForValue().set(key, count);
+            log.info("设置总数="+count);
         }
         if (redisTemplate.hasKey(todyKey)) {
             todayCount = (Integer) redisTemplate.opsForValue().get(todyKey);
+            log.info("今天数量="+count);
         } else {
             redisTemplate.opsForValue().set(todyKey, todayCount);
+            log.info("设置今日数量="+count);
         }
         model.addAttribute("count", count);
         model.addAttribute("todayCount", todayCount);
@@ -160,6 +167,7 @@ public class ProductController {
 
     @GetMapping("/addClick")
     public void addClick() {
+        log.info("开始调用addClick");
         String key = "readCount";
         String today = "todayCount";
         String form = String.format("%tF", new Date());
