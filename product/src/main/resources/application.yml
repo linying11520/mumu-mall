@@ -12,6 +12,7 @@ spring:
         max-idle: 8
         max-wait: -1
         min-idle: 0
+
   thymeleaf:
     prefix: classpath:/templates/
   jackson:
@@ -22,5 +23,12 @@ eureka:
     service-url:
       defaultZone: http://127.0.0.1:9000/eureka/
 
+
+zookeeper:
+  address: 47.115.51.108:2181
+  retryCount: 5
+  elapsedTimeMs: 500
+  sessionTimeoutMs: 30000
+  connectionTimeoutMs: 10000
 
 

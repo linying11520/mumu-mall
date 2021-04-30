@@ -2,6 +2,10 @@ package com.mumu.gateway.controller;
 
 import com.mumu.gateway.common.RateLimiter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.recipes.locks.InterProcessLock;
+import org.apache.curator.framework.recipes.locks.InterProcessMutex;
+import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.integration.redis.util.RedisLockRegistry;
@@ -22,10 +26,16 @@ public class ProductController {
     private ExecutorService newFixThreadPool;
 
     @Autowired
+    private RedissonClient redissonClient;
+
+    @Autowired
     private RateLimiter rateLimiter;
 
     @Autowired
     private RedisLockRegistry redisLockRegistry;
+
+    @Autowired
+    private CuratorFramework curatorFramework;
 
     ReentrantLock reentrantLock = new ReentrantLock();
 
@@ -34,6 +44,39 @@ public class ProductController {
     public void testLockRegistry() {
         String key = "123456";
         Lock lock = redisLockRegistry.obtain(key);
+        try {
+            lock.lock();
+            System.out.println("测试分布式锁");
+            Thread.sleep(10000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    @GetMapping("/testZookeeperLock")
+    public void testZookeeperLock() {
+        InterProcessLock lock = new InterProcessMutex(curatorFramework, "/locker");
+        try {
+            lock.acquire();
+            System.out.println("测试分布式锁");
+            Thread.sleep(10000);
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                lock.release();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    @GetMapping("/testRedissonLock")
+    public void testRedissonLock() {
+        String key = "123456";
+        Lock lock = redissonClient.getLock(key);
         try {
             lock.lock();
             System.out.println("测试分布式锁");
